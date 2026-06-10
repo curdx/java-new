@@ -173,7 +173,56 @@ Vue 3.5.x + Vite 8.x（已验证 8.0.16 为当前版本）+ TypeScript 5.x
 
 ---
 
-## 六、数据可信度说明
+## 六、激进选型修订（第二轮核查后，取代 5.2 基线中的对应项）
+
+> 原则：**激进本身就是产品卖点，但只在"已 GA 且有人兜底"的地方激进**。分三档：全力押注 / 预留开关 / 明确不碰。
+
+### 6.1 全力押注（直接上，写进宣传语）
+
+| 层 | 激进选型（已核实状态） | 取代 | 为什么敢上 |
+|----|----|----|----|
+| ORM | **MyBatis-Flex 1.11.7**（2026-05-04 发版，官方 `mybatis-flex-spring-boot4-starter` 已就位） | MyBatis-Plus 3.5.16（已进入纯维护期，月度小版本） | APT 编译期生成强类型查询（`QueryChain` + 字段常量），无 MP 拦截器链开销，原生多租户/逻辑删除/乐观锁；官方与第三方基准均占优。风险=周边现成插件少，但数据权限层我们本来就要自研，正好做成 Flex 方言层 |
+| JSON | **Jackson 3（tools.jackson）** | Jackson 2 / Fastjson2 | Spring Boot 4 官方默认就是 Jackson 3，跟官方走的"激进"零风险 |
+| 上下文传递 | **ScopedValue（JEP 506，JDK 25 已转正）承载租户/用户/链路上下文** | ThreadLocal | 与虚拟线程天然配合，竞品全部还在 ThreadLocal + TransmittableThreadLocal 打补丁 |
+| JDK 基线 | **JDK 25-only**（不背 8/11/17 包袱） | 多版本兼容 | 竞品被 JDK 8 存量用户拖死在旧栈，我们反向把"不兼容旧 JDK"做成定位 |
+| 构建 | **Gradle 9.5（Kotlin DSL + version catalog + 配置缓存）** | Maven 3.9 | Maven 4 至今未 GA；Gradle 9 稳定且构建速度即开发体验。风险=国内贡献者 Maven 惯性，用完善的 CONTRIBUTING 文档对冲 |
+| 缓存 | **JetCache 2.8（2026-05 RC，维护已恢复活跃）多级缓存注解** + Caffeine/Redisson 底座 | 手写 Redis 工具类 | 注解式两级缓存是商业框架都没做好的点 |
+| 主键 | **时间有序 ID 默认：TSID / UUIDv7**（JDK 26 起 `UUID.ofEpochMillis` 原生支持），雪花作兼容选项 | 雪花 ID | B+ 树友好 + 无时钟回拨焦虑 + 国际通行 |
+| API 文档 | **smart-doc 3.1.x（无侵入，纯 Javadoc）+ SpringDoc 双轨** | 仅 SpringDoc | 代码零注解污染，配合 AI 代码生成时尤其干净 |
+| 数据库策略 | **PostgreSQL-first**（同时兼容 MySQL/达梦/金仓/OpenGauss） | MySQL-first | 全部竞品都是 MySQL-first；PG-first 直接对齐国际生态与向量检索（pgvector→AI 模块） |
+| 前端工具链 | **VoidZero 全家桶：Vite 8（Rolldown 默认）+ Oxlint（或 Biome 2 一体化）** | Vite+ESLint+Prettier | Vite 8 已默认 Rolldown；lint 速度 50~100×，monorepo 体感差异巨大 |
+| 服务端状态 | **Pinia Colada**（Pinia 官方出品，生产可用） | 手写 axios + loading 状态 | admin 框架普遍没有服务端状态层，这是代码质量的代差 |
+| UI 形态 | **shadcn-vue 2.7（10.1k star）风格设计系统为主壳** + Element Plus 适配层（vben 5 适配器思路） | 纯 Element Plus | 摆脱"千篇一律 Element 后台脸"，国际卖相 + 国内兼容两头占 |
+
+### 6.2 预留开关（架构上留位，GA 后一键启用）
+
+- **Vue 3.6 Vapor Mode**：仍是 beta（3.6.0-beta.x），官方明确勿用于生产，预计 2026 中后期 GA——组件写法保持 Vapor 兼容，GA 即切。
+- **Structured Concurrency（JEP 505）**：JDK 25 仍为第 5 轮 preview，JDK 26 继续 preview——并发编排模块留接口，不开 `--enable-preview`。
+- **EasyQuery 3.2.x**：隐式 Join/子查询很惊艳，但 765 star、SB4 适配未明确——作为实验模块观察，不进核心。
+- **Maven 4**：未 GA，不等。
+
+### 6.3 明确不碰（激进 ≠ 作死）
+
+- **Solon 双运行时**：4.0 性能数据漂亮（0.1s 启动），但生态与 Spring 割裂，做"双运行时支持"等于维护两个框架——放弃。
+- **Fastjson2 作默认 JSON**：安全口碑已修复但无必要，SB4 官方 Jackson 3 即是答案（可做可选适配）。
+- **Camunda 8 / JimuReport 进核心依赖**：许可证问题，前文已述。
+- **多 ORM 抽象层**：为"同时支持 MP/Flex/JPA"做仓储抽象是维护黑洞，全押 Flex，提供 MP→Flex 迁移指南即可。
+
+### 6.4 激进版一页纸（修订 5.2）
+
+```
+后端：JDK 25-only · Spring Boot 4.0.x (Jackson 3 / JSpecify / 原生 API Versioning)
+      MyBatis-Flex 1.11.x (APT 强类型) · Sa-Token 1.45+ · ScopedValue 上下文
+      JetCache 2.8 多级缓存 · TSID/UUIDv7 主键 · smart-doc + SpringDoc
+      Warm-Flow/FlowLong 工作流 · Spring AI 1.1.x + LangChain4j · GraalVM 原生发行版
+      PostgreSQL-first（兼容 MySQL/达梦/金仓）· Gradle 9 Kotlin DSL
+前端：Vue 3.5（Vapor-ready）· Vite 8/Rolldown · Oxlint 或 Biome 2 · TS 5
+      shadcn-vue 设计系统 + Element Plus 适配层 · Pinia + Pinia Colada · Tailwind v4
+```
+
+来源（第二轮核查，2026-06-10）：github.com/mybatis-flex/mybatis-flex · github.com/dromara/easy-query · github.com/opensolon/solon · spring.io/blog/2025/10/07/introducing-jackson-3-support-in-spring · openjdk.org/jeps/506 · openjdk.org/jeps/505 · github.com/alibaba/jetcache · github.com/f4b6a3/tsid-creator · gradle.org/releases · cwiki.apache.org/confluence/display/MAVEN/Maven+4.0.0+GA+checklist · github.com/unovue/shadcn-vue · pinia-colada.esm.dev · github.com/smart-doc-group/smart-doc
+
+## 七、数据可信度说明
 
 - **高置信（官方源/API 实测）**：JDK 25 LTS、SB 4.0.6、Spring Cloud 2025.1、SCA 2025.1.0.0、Vite 8.0.16、Spring AI 1.1.7、Sa-Token 1.45.0、各 GitHub star 数（2026-06-10 实测）、yudao 主分支 SB 2.7.18、Pig 主分支 SB 4.0.6、BladeX IoT 工作流定价、Camunda 8 许可证变更。
 - **中置信（第三方转述）**：BladeX 基础授权 3999 元（社区文章）、JNPF 价格区间（需询价）、JeecgBoot 商业版功能差异。
