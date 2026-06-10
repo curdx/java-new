@@ -113,7 +113,7 @@
       Jackson 3 · JSpecify 空安全 · 内置 API Versioning · RestClient
 构建：Maven 3.9.x（纯 XML，无 Kotlin；Maven 4 未 GA 不追）
 架构：Spring Modulith 2.0 模块化单体 ⇄ 微服务双形态（同一套领域代码）
-ORM：【待定·见第四节】MyBatis-Flex / MyBatis-Plus / JPA-Hibernate 三选一
+ORM：✅ **MyBatis-Flex 1.11.x**（已拍板）· APT 编译期强类型 · Apache-2.0
 数据库：PostgreSQL-first（吃下金仓/openGauss/瀚高）；达梦/MySQL 系做适配层
 认证：Sa-Token（国内主流）；OAuth2/OIDC 场景 Spring Security 7 + Authorization Server
 缓存：JetCache 2.8 多级缓存 + Caffeine/Redisson
@@ -135,15 +135,35 @@ API 文档：springdoc-openapi（国际标准）；可选 smart-doc（国内无�
 
 ---
 
-## 六、待你拍板（战略岔路）
+## 六、已拍板的决策（2026-06-10）
 
-1. **主市场定位**：纯信创/国内优先（ORM 走 MyBatis 系、文档中文优先）？还是要国际开源影响力（JPA/Hibernate、英文文档、Testcontainers 全套）？还是两者并重（默认国际最佳实践 + 信创适配层）？
-2. **ORM 路线**：
-   - **MyBatis-Flex**：最现代（APT 强类型、性能好），国内顺，但达梦要自写方言、国际无人识。
-   - **MyBatis-Plus**：信创现成度最高（达梦/openGauss 方言现成），但已进维护期、不够新。
-   - **JPA + Hibernate（+ jOOQ 复杂查询）**：唯一国际通行解，达梦需自定义 Dialect，国内开发者接受度低。
-   - **双栈**：JPA 为默认、MyBatis 作可选模块（不做统一抽象，各走各的 starter）。
-3. **Spring Boot 基线**：直接 **4.0.x**（推荐，greenfield + 支持期长）还是先 **3.5.x** 稳妥（信创案例多，2027 再升）？
+| 决策项 | 选定 | 含义 |
+|----|----|----|
+| **主市场定位** | **信创 / 国内优先** | ORM 走 MyBatis 系；中文文档优先；国密/达梦/金仓适配做深；国际化以后再说 |
+| **ORM** | **MyBatis-Flex 1.11.x** | APT 编译期强类型、性能优于 MyBatis-Plus、Apache-2.0 干净 |
+| **Spring Boot 基线** | **4.0.x** | 最低 JDK17 信创可行；OSS 支持到 2028；最新特性。需对国产 DB 驱动 + TongWeb 做回归 |
+
+### 6.1 决策带出的待办（信创优先 + MyBatis-Flex 的落地项）
+
+1. **达梦 IDialect**：MyBatis-Flex 对达梦 DM8（Oracle 系）无现成方言，需自研 `IDialect` 实现（分页/关键字/类型映射）。金仓/openGauss 是 PG 系，Flex 的 PostgreSQL 方言可直接用。
+   → 建议把这个达梦方言**开源回馈到 MyBatis-Flex 社区**，作为项目的信创亮点之一。
+2. **SB4 信创回归矩阵**：在 JDK 17/21（龙井/毕昇）× 金仓/openGauss/达梦 × TongWeb 8 × 麒麟/统信 × ARM64/x86 上跑一轮兼容性验证，形成「信创认证矩阵」文档（这本身就是竞品没有的卖点）。
+3. **国密 starter**：SM2/3/4（BouncyCastle+Hutool）+ MyBatis-Flex 字段加密 TypeHandler + 可插拔密钥源；国密 TLS 走 TongWeb/GmSSL。
+4. **部署双形态**：可执行 Jar（内嵌 Tomcat，开发/互联网部署）+ WAR（TongWeb，信创验收）。
+
+### 6.2 最终敲定的后端栈（信创版 v1）
+
+```
+Java 21（地板 17，龙井可选 25）· Spring Boot 4.0.x · Spring Framework 7 · Jakarta EE 11
+Maven 3.9.x（纯 XML，无 Kotlin）
+MyBatis-Flex 1.11.x（+ 自研达梦方言）· PostgreSQL-first（金仓/openGauss 零改造）
+Sa-Token（认证）· JetCache 2.8（多级缓存）· Redisson · SnailJob/XXL-Job（任务）
+Warm-Flow/FlowLong（工作流）· 国密 starter（SM2/3/4 + 字段加密）
+springdoc-openapi（+ 可选 smart-doc）· Spring Modulith（模块化单体 ⇄ 微服务）
+工程标准：JUnit6 + AssertJ + Mockito + Testcontainers · Micrometer + OpenTelemetry
+部署：Jar + WAR 双形态 · ARM64/x86 双架构 · 验证 TongWeb8/麒麟/统信
+文档：中文优先（英文 i18n 留架构位，二期再做）
+```
 
 ---
 
