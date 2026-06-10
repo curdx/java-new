@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.curdx.nova</groupId>
+        <artifactId>nova</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>nova-starter-crypto</artifactId>
+    <name>Nova :: Starter :: Crypto</name>
+    <description>国密支持：SM2/SM3/SM4 算法 + 数据库敏感字段 SM4 加密 TypeHandler</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.curdx.nova</groupId>
+            <artifactId>nova-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.curdx.nova</groupId>
+            <artifactId>nova-starter-orm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-crypto</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,64 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: nova-server
+  threads:
+    virtual:
+      enabled: true   # JDK 21 虚拟线程
+  datasource:
+    # 开发态：H2 以 PostgreSQL 兼容模式运行（与生产 PG/金仓/openGauss 行为对齐）
+    url: jdbc:h2:mem:nova;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always
+  h2:
+    console:
+      enabled: true
+
+mybatis-flex:
+  global-config:
+    print-banner: false
+
+# Sa-Token
+sa-token:
+  token-name: Authorization
+  timeout: 2592000
+  is-read-cookie: false
+  token-style: uuid
+
+nova:
+  crypto:
+    # 仅供开发演示！生产用环境变量 NOVA_CRYPTO_SM4_KEY 注入（32 位 hex = 16 字节）
+    sm4-key: 0123456789abcdef0123456789abcdef
+  system:
+    init-admin: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    io.github.curdx.nova: debug
+
+---
+# 生产示例：PostgreSQL（金仓/openGauss 同为 PG 系，仅 driver/url 不同）
+# 金仓:    driver=com.kingbase8.Driver       url=jdbc:kingbase8://host:54321/nova
+# openGauss: driver=org.opengauss.Driver    url=jdbc:opengauss://host:5432/nova
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nova
+    driver-class-name: org.postgresql.Driver
+    username: nova
+    password: ${DB_PASSWORD:}
+  sql:
+    init:
+      mode: never
